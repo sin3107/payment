@@ -15,12 +15,46 @@ const serverError = '500'
 
 export {
     addProduct,
+    successPayment,
+    failPayment
 }
 
 async function addProduct(httpRequest){
     try {
         const { body, body: {user: {_id}} } = httpRequest;
         const { status, body: resBody } = await payment_use_case.addProduct(_id, body)
+        
+        httpResponse.statusCode = status ? ok : badRequest;
+        httpResponse.body = resBody;
+        return httpResponse
+    } catch (err) {
+        console.log(err)
+        httpResponse.statusCode = serverError;
+        httpResponse.body = err.message;
+        return httpResponse
+    }
+}
+
+async function successPayment(httpRequest){
+    try {
+        const { params } = httpRequest;
+        const { status, body: resBody } = await payment_use_case.successPayment(_id, params)
+        
+        httpResponse.statusCode = status ? ok : badRequest;
+        httpResponse.body = resBody;
+        return httpResponse
+    } catch (err) {
+        console.log(err)
+        httpResponse.statusCode = serverError;
+        httpResponse.body = err.message;
+        return httpResponse
+    }
+}
+
+async function failPayment(httpRequest){
+    try {
+        const { body, body: {user: {_id}} } = httpRequest;
+        const { status, body: resBody } = await payment_use_case.failPayment(_id, body)
         
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = resBody;

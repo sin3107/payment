@@ -1,9 +1,12 @@
-import {userDb, productDb} from '../db-handler/index.js'
+import {userDb, productDb, paymentDb} from "../db_handler/index.js"
 import errorMessage from "../helper/error.js";
 import { valid } from '../helper/utils.js';
+import tossPayments from 'tosspayments';
 
 const user_use_cases = {
-    addProduct
+    addProduct,
+    successPayment,
+    failPayment
 };
 
 export {
@@ -16,7 +19,7 @@ const result ={
 
 async function addProduct(userId, body){
     try {
-         const model = {
+        const model = {
             title: {type: 'str'},
             productArray: {type: 'arr'},
             amount: {type: 'num'}
@@ -47,14 +50,16 @@ async function addProduct(userId, body){
         const billLog = BillLog({title, userId, productArray, amount})
         const billId = await paymentDb.insertBillLog(billLog)
 
+        //구매 상품 각각의 내역을 하위 테이블 생성하여 등록
+
         tossPayments.requestPayment('카드', { // 결제 수단
             // 결제 정보
             amount: amount,
             orderId: billId,
             orderName: title,
             customerName: userName,
-            successUrl: 'http://localhost:3000/success',
-            failUrl: 'http://localhost:3000/fail',
+            successUrl: 'http://localhost:3000/api/success',
+            failUrl: 'http://localhost:3000/api/fail',
             flowMode: 'DIRECT',
             easyPay: '토스페이'
           })
@@ -77,20 +82,6 @@ async function addProduct(userId, body){
                 return result;
             }
           })
-
-        // 성공함
-        const paymentInfo = {
-            something: 'good'
-        }
-
-        // bill log update
-        await paymentDb.updateSuccessBill(billId, paymentInfo)
-        
-
-        // db 지갑에 추가
-        /*
-        productArray 돌려서 각 갯수만큼 insert
-        */
         
         result.status = true;
         result.body = {}
@@ -102,12 +93,56 @@ async function addProduct(userId, body){
 }
 
 
-async function successPayment(userId, body){
+async function successPayment(params){
+    try {
+
+        // 성공함
+        const paymentInfo = {
+            something: 'good'
+        }
+
+        const options = {
+            uri:"https://api.tosspayments.com/v1/payments/confirm", 
+            method: 'POST',
+            body: {
+                params
+            },
+            json:true
+        }
+        request.post(options, function(err,httpResponse,body){ 
+            if(err) {
+                console.log(`err => ${err}`)
+            } else {
+                if(res.statusCode == 200) {
+                    const paymentInfo = {
+                        something: "cancel"
+                    }
+                    const failBillLog = paymentDb.updateFailBill(billId, paymentInfo)
+                    result.status = false;
+                    result.body = { failBillLog }
+                    return result;
+              }
+          }
+        })
+
+
+        // bill log update
+        await paymentDb.updateSuccessBill(params.orderId, paymentInfo)
+    
+        result.status = true;
+        result.body = {success: true}
+        return result;
+    } catch (err) {
+        console.log(err)
+        throw err;
+    }
+}
+
+
+async function failPayment(userId, body){
     try {
         const model = {
-            title: {type: 'str'},
-            productArray: {type: 'arr'},
-            amount: {type: 'num'}
+
         }
 
         valid({userId, ...body}, model)
@@ -118,23 +153,14 @@ async function successPayment(userId, body){
             return result;   
         }
 
-        // 성공함
         const paymentInfo = {
-            something: 'good'
+            something: "cancel"
         }
-
-        // bill log update
-        await paymentDb.updateSuccessBill(billId, paymentInfo)
-        
-
-        // db 지갑에 추가
-        /*
-        productArray 돌려서 각 갯수만큼 insert
-        */
-        
-        result.status = true;
-        result.body = {}
+        const failBillLog = paymentDb.updateFailBill(billId, paymentInfo)
+        result.status = false;
+        result.body = { failBillLog }
         return result;
+
     } catch (err) {
         console.log(err)
         throw err;
