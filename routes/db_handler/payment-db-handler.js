@@ -15,7 +15,6 @@ export default function makePaymentDb(makeDb) {
         }
     }
 
-
     async function insertBillLog(BillLog) {
         try {
             const db = await getPaymentDb();
@@ -33,8 +32,7 @@ export default function makePaymentDb(makeDb) {
         const db = await makeDb()
         const session = await db.startSession();
         try {
-            session.endSession();
-
+        
             const ordersCollection = db.collection('payment');
             const { insertedId } = await ordersCollection.updateOne(BillLog).session(session);
             await session.commitTransaction();

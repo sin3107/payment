@@ -26,16 +26,4 @@ export default function makeProductDb(makeDb) {
         }
     }
 
-    async function checkProductCount(id, body) {
-        try {
-            const db = await getProductDb();
-            const query = {_id: id};
-            const result = await db.findOne(query);
-
-        } catch(err) {
-            console.log(err);
-            throw err;
-        }
-    }
-
 }

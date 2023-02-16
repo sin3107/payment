@@ -24,15 +24,6 @@ const userDb = makeUserDb(makeDb)
 const productDb = makeProductDb(makeDb)
 const paymentDb = makePaymentDb(makeDb)
 
-
-db.getMongo().startSession()
-session.getDatabase("users").friends;
-session.startTransaction();
-
-session.abortTransaction();
-
-session.commitTransaction();
-
 export {
     userDb, productDb, paymentDb,
     makeDb
