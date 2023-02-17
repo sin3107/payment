@@ -17,7 +17,7 @@ export default function makeUserDb(makeDb) {
     async function findUserById(id){
         try {
             const db = await getUserDb()
-            const query = {_id: id}
+            const query = {member_id: id}
             const result = await db.findOne(query)
             return result;
         } catch(err) {

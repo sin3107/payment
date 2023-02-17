@@ -1,23 +1,17 @@
 export default function buildBillLog(){
     return ({
-        _id,
-        userId,
-        totalPrice,
+        memberId,
         paymentNumber,
-        paymentDate,
         paymentType,
-        title
+        paymentTitle,
+        paymentTotalPrice
     })=> {
-        if(!_id) _id = id;
-        
         return Object.freeze({
-            _id: String(_id),
-            userId: String(userId),
-            totalPrice: Number(totalPrice),
-            paymentNumber: String(paymentNumber),
-            paymentDate: String(paymentDate),
-            paymentType: Number(paymentType),
-            title: String(title)
+            member_id: Number(memberId),
+            payment_number: String(paymentNumber),
+            payment_type: String(paymentType),
+            payment_title: String(paymentTitle),
+            payment_total_price: Number(paymentTotalPrice)
         })
     }
 }

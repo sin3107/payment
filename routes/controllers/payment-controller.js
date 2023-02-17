@@ -21,10 +21,10 @@ export {
 
 async function addProduct(httpRequest){
     try {
-        const { body, body: {user: {_id}} } = httpRequest;
+        const { body, body: { user: { _id } } } = httpRequest;
         const { status, body: resBody } = await payment_use_case.addProduct(_id, body)
         
-        httpResponse.statusCode = status ? ok : badRequest;
+        httpResponse.statusCode = status ? created : badRequest;
         httpResponse.body = resBody;
         return httpResponse
     } catch (err) {
@@ -38,10 +38,10 @@ async function addProduct(httpRequest){
 async function successPayment(httpRequest){
     try {
         const { params } = httpRequest;
-        const { status, body: resBody } = await payment_use_case.successPayment(_id, params)
+        const { status, body } = await payment_use_case.successPayment(params)
         
         httpResponse.statusCode = status ? ok : badRequest;
-        httpResponse.body = resBody;
+        httpResponse.body = body;
         return httpResponse
     } catch (err) {
         console.log(err)
@@ -53,11 +53,11 @@ async function successPayment(httpRequest){
 
 async function failPayment(httpRequest){
     try {
-        const { body, body: {user: {_id}} } = httpRequest;
-        const { status, body: resBody } = await payment_use_case.failPayment(_id, body)
+        const { params } = httpRequest;
+        const { status, body } = await payment_use_case.failPayment(params)
         
         httpResponse.statusCode = status ? ok : badRequest;
-        httpResponse.body = resBody;
+        httpResponse.body = body;
         return httpResponse
     } catch (err) {
         console.log(err)

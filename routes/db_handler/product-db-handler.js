@@ -26,4 +26,16 @@ export default function makeProductDb(makeDb) {
         }
     }
 
+    async function findProductById(id, productNumber) {
+        try {
+            const db = await getProductDb();
+            const query = { product_id: id, product_max_num: { $lte: productNumber } };
+            const result = await db.findOne(query);
+            return result;
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
+    }
+
 }
