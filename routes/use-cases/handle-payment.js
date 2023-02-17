@@ -5,7 +5,7 @@ import tossPayments from 'tosspayments';
 import { BillLog, BillLogDetail, BillLogError} from "../models/index.js"
 
 const user_use_cases = {
-    addProduct,
+    addPayment,
     successPayment,
     failPayment
 };
@@ -18,7 +18,7 @@ const result ={
     body: null
 }
 
-async function addProduct(memberId, body){
+async function addPayment(memberId, body){
     try {
         const model = {
             memberId: {type: "num"},

@@ -14,15 +14,15 @@ const unauthorized = '401';
 const serverError = '500'
 
 export {
-    addProduct,
+    addPayment,
     successPayment,
     failPayment
 }
 
-async function addProduct(httpRequest){
+async function addPayment(httpRequest){
     try {
         const { body, body: { user: { _id } } } = httpRequest;
-        const { status, body: resBody } = await payment_use_case.addProduct(_id, body)
+        const { status, body: resBody } = await payment_use_case.addPayment(_id, body)
         
         httpResponse.statusCode = status ? created : badRequest;
         httpResponse.body = resBody;

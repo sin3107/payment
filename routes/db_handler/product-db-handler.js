@@ -2,6 +2,7 @@ export default function makeProductDb(makeDb) {
     return Object.freeze({
         getProductDb,
         findProductById,
+        findProductByIdAndMaxNumber
     })
 
     async function getProductDb() {
@@ -26,7 +27,7 @@ export default function makeProductDb(makeDb) {
         }
     }
 
-    async function findProductById(id, productNumber) {
+    async function findProductByIdAndMaxNumber(id, productNumber) {
         try {
             const db = await getProductDb();
             const query = { product_id: id, product_max_num: { $lte: productNumber } };

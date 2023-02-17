@@ -34,3 +34,37 @@ async function findProductList(httpRequest) {
         return httpResponse
     }
 }
+
+async function findProductList(httpRequest) {
+    try {
+        const { query : {productId} } = httpRequest;
+        const { status, body } = await product_use_cases.findProductById(productId)
+
+        httpResponse.statusCode = status ? ok : badRequest;
+        httpResponse.body = body;
+        return httpResponse
+
+    } catch (err) {
+        console.log(err)
+        httpResponse.statusCode = serverError;
+        httpResponse.body = err.message;
+        return httpResponse
+    }
+}
+
+async function addProduct(httpRequest) {
+    try {
+        const { body:  } = httpRequest;
+        const { status, body } = await product_use_cases.addProduct()
+
+        httpResponse.statusCode = status ? ok : badRequest;
+        httpResponse.body = body;
+        return httpResponse
+
+    } catch (err) {
+        console.log(err)
+        httpResponse.statusCode = serverError;
+        httpResponse.body = err.message;
+        return httpResponse
+    }
+}
