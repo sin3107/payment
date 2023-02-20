@@ -1,14 +1,18 @@
 export default function makeProductDb(makeDb) {
     return Object.freeze({
-        getProductDb,
+        findProductList,
         findProductById,
-        findProductByIdAndMaxNumber
+        findProductByIdAndMaxCount
     })
 
-    async function getProductDb() {
+    async function findProductList(id) {
         try {
-            const db = await makeDb();
-            return db.collection('product');
+            const db = await makeDb().collection('product');
+            const query = {store_id: id};
+            const result = await db.findOne(query);
+            let arr = []
+            await result.forEach(item => arr.push(item))
+            return arr
         } catch (err) {
             console.log(err);
             throw err;
@@ -17,7 +21,7 @@ export default function makeProductDb(makeDb) {
 
     async function findProductById(id) {
         try {
-            const db = await getProductDb();
+            const db = await makeDb().collection('product');
             const query = {_id: id};
             const result = await db.findOne(query);
             return result;
@@ -27,10 +31,10 @@ export default function makeProductDb(makeDb) {
         }
     }
 
-    async function findProductByIdAndMaxNumber(id, productNumber) {
+    async function findProductByIdAndMaxCount(id, productNumber) {
         try {
-            const db = await getProductDb();
-            const query = { product_id: id, product_max_num: { $lte: productNumber } };
+            const db = await makeDb().collection('product');
+            const query = { product_id: id, product_max_count: { $lte: productNumber } };
             const result = await db.findOne(query);
             return result;
         } catch (err) {

@@ -1,11 +1,13 @@
 export default function buildBillLogError(){
     return ({
-        paymentId,
-        paymentErrorCode
+        billLogId,
+        billLogErrorCode,
+        billLogErrorMessage
     }) => {
         return Object.freeze({
-            payment_id: Number(paymentId),
-            payment_error_code: String(paymentErrorCode)
+            bill_log_id: Number(billLogId),
+            bill_log_error_code: String(billLogErrorCode),
+            bill_log_error_message: String(billLogErrorMessage)
         })
     }
 }

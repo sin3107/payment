@@ -1,17 +1,17 @@
-import {userDb, productDb, paymentDb} from "../db_handler/index.js"
+import { memberDb, productDb, paymentDb } from "../db_handler/index.js"
 import errorMessage from "../helper/error.js";
 import { valid } from '../helper/utils.js';
-import tossPayments from 'tosspayments';
-import { BillLog, BillLogDetail, BillLogError} from "../models/index.js"
+import { BillLog, BillLogDetail, BillLogProduct, BillLogError } from "../models/index.js"
+import request from "request"
 
-const user_use_cases = {
+const payment_use_case = {
     addPayment,
     successPayment,
     failPayment
 };
 
 export {
-    user_use_cases
+    payment_use_case
 };
 const result ={
     status: false,
@@ -22,15 +22,15 @@ async function addPayment(memberId, body){
     try {
         const model = {
             memberId: {type: "num"},
-            paymentNumber: {type: "str"},
-            paymentType: {type: "str"},
-            paymentTitle: {type: "str"},
-            paymentTotalPrice: {type: "num"},
+            storeId: {type: "num"},
+            billLogType: {type: "str"},
+            billLogTitle: {type: "str"},
+            billLogTotalPrice: {type: "num"},
             productList: {type: "arr"}
         }
 
         valid({memberId, ...body}, model);
-        const hasUser = await userDb.findUserById(memberId);
+        const hasUser = await memberDb.findMemberById(memberId);
         if(!hasUser){
             result.status = false;
             result.body = errorMessage.dbError.userNotFound;
@@ -39,11 +39,12 @@ async function addPayment(memberId, body){
 
         // 반복돌려서 검색하기
         let failList = []
+        let productDetailList = []
         // 상품 확인
-        const checkProduct = await Promise.all(
+        await Promise.all(
             productList.map(async (product) => {
                 const { productId, productNum } = product;
-                if (!productId || !productNum ) {
+                if (!productId || !productNum) {
                     failList.push(productId);
                     return;
                 }
@@ -51,6 +52,9 @@ async function addPayment(memberId, body){
 
                 if (!hasProducted) {
                     failList.push(productId);
+                    return;
+                } else {
+                    productDetailList.push(hasProducted)
                     return;
                 }
             })
@@ -60,45 +64,25 @@ async function addPayment(memberId, body){
             result.status = false;
             result.body = errorMessage.paymentError.productMaxNum;
             return result;
-        }
+        } 
 
-        // bill log 생성
-        const {userName} = hasUser;
-        const {title, productArray, amount} = body;
+        const { storeId, billLogType, billLogNumber, billLogTitle, billLogTotalPrice } = body;
 
-        const billLog = BillLog({title, memberId, productArray, amount});
+        const billLog = BillLog({memberId, storeId, billLogType, billLogNumber, billLogTitle, billLogTotalPrice});
         const billId = await paymentDb.insertBillLog(billLog)
+        
+        await paymentDb.insertBillLogDetail(BillLogDetail({billId, step: 1}))
 
-        //구매 상품 각각의 내역을 하위 테이블 생성하여 등록
-
-        const billLogDetail = BillLogDetail({billId, step: 2})
-        tossPayments.requestPayment('카드', { // 결제 수단
-            // 결제 정보
-            amount: amount,
-            orderId: billId,
-            orderName: title,
-            customerName: userName,
-            successUrl: 'http://localhost:3000/api/success',
-            failUrl: 'http://localhost:3000/api/fail',
-            flowMode: 'DIRECT',
-            easyPay: '토스페이'
-          })
-          .catch(function (error) {
-            if (error.code === 'USER_CANCEL') {
-                paymentDb.insertBillLogDetail(billLogDetail);
-                result.status = false;
-                result.body = errorMessage.paymentError.paymentUserCancel;
-                return result;
-            } else if (error.code === 'INVALID_CARD_COMPANY') {
-                paymentDb.insertBillLogDetail(billLogDetail);
-                result.status = false;
-                result.body = errorMessage.paymentError.invalidCard;
-                return result;
-            }
-          })
+        await Promise.all(
+            productDetailList.map(async (product) => {
+                const { product_id, product_name, product_price } = product;
+                const billLogProduct = BillLogProduct({billId, product_id, product_name, product_price})
+                await paymentDb.insertBillLogProduct(billLogProduct);
+            })
+        )
         
         result.status = true;
-        result.body = {}
+        result.body = { success: true }
         return result;
     } catch (err) {
         console.log(err)
@@ -107,9 +91,12 @@ async function addPayment(memberId, body){
 }
 
 
-async function successPayment(params){
+async function successPayment(query){
     try {
-        const { paymentKey, orderId: billId, amount } = params;
+        const { paymentKey, orderId: billId, amount } = query;
+
+        // const billLogDetail = BillLogDetail({billId, step: 5})
+        // await paymentDb.insertBillLogDetail(billLogDetail);
 
         const options = {
             uri:"https://api.tosspayments.com/v1/payments/confirm", 
@@ -119,27 +106,45 @@ async function successPayment(params){
             },
             json:true
         }
-        request.post(options, function(err,httpResponse,body){ 
+        request.post(options, function(err, httpResponse, body){ 
             if(err) {
                 console.log(`err => ${err}`)
             } else {
-                if(res.statusCode != 200) {
-                    const billLogDetail = BillLogDetail({billId, step: 0})
+                if(httpResponse.statusCode != 200) {
+
+                    // bill_log_detail step=4 insert
+                    const billLogDetail = BillLogDetail({billId, step: 4})
                     const failBillLog = paymentDb.insertBillLogDetail(billLogDetail);
+
                     result.status = false;
-                    result.body = { failBillLog }
+                    result.body = { }
                     return result;
                 }
             }
         })
         
-        // 티켓 발권
+    
+        // transaction start
 
+        // bill_log_success table
+        // 승인 시 받은 값을 참조하여 payment_key, 결제시간 작성
+        // AAA
+
+        // bill_log table & bill_log_product table 
+        // 두 table을 참조하여 ticket 발권
+        // AAA
+
+        // payment key도 업데이트
+        await paymentDb.updateBillLog(billId, { payment_key: paymentKey })
+
+        // 완료 처리
         const billLogDetail = BillLogDetail({billId, step: 5});
         const successBillLog = paymentDb.insertBillLogDetail(billLogDetail);
-        result.status = true;
-        result.body = { successBillLog }
 
+        // transcation end
+
+        result.status = true;
+        result.body = {  }
         return result;
     } catch (err) {
         console.log(err)
@@ -148,11 +153,11 @@ async function successPayment(params){
 }
 
 
-async function failPayment(params){
+async function failPayment(query){
     try {
-        const {code, message, orderId} = params
+        const {code, message, orderId} = query
 
-        const billLogError = BillLogError({orderId, code});
+        const billLogError = BillLogError({orderId, code, message});
         await paymentDb.insertBillLogError(billLogError);
         result.status = false;
         result.body = errorMessage.paymentError.failPayment;

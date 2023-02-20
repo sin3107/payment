@@ -3,6 +3,7 @@ export default function makePaymentDb(makeDb) {
         getPaymentDb,
         insertBillLog,
         insertBillLogDetail,
+        insertBillLogProduct,
         insertBillLogError,
         updateBillLog
     })
@@ -10,7 +11,7 @@ export default function makePaymentDb(makeDb) {
     async function getPaymentDb() {
         try {
             const db = await makeDb();
-            return db.collection('payment');
+            return db.collection('bill_log');
         } catch (err) {
             console.log(err);
             throw err;
@@ -31,7 +32,7 @@ export default function makePaymentDb(makeDb) {
 
     async function insertBillLogDetail(BillLogDetail) {
         try {
-            const db = await makeDb().collection('payment_detail');
+            const db = await makeDb().collection('bill_log_detail');
             const { insertedId } = await db.insertOne(BillLogDetail);
             return insertedId;
         } catch (err) {
@@ -40,10 +41,20 @@ export default function makePaymentDb(makeDb) {
         }
     }
 
+    async function insertBillLogProduct(BillLogProduct) {
+        try {
+            const db = await makeDb().collection('bill_log_product');
+            const { insertedId } = await db.insertOne(BillLogProduct);
+            return insertedId;
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
+    }
 
     async function insertBillLogError(BillLogError) {
         try {
-            const db = await makeDb().collection('payment_error_code');
+            const db = await makeDb().collection('bill_log_error_code');
             const { insertedId } = await db.insertOne(BillLogError);
             return insertedId;
         } catch (err) {
@@ -56,19 +67,16 @@ export default function makePaymentDb(makeDb) {
     async function updateBillLog(query, update) {
 
         const db = await makeDb()
-        // db conntion부 가져오기
-
-
-        // 세션 실행
+        const billLogCollection = db.collection('bill_log');
         const session = await db.startSession();
+        session.startTransaction();
         try {
-            const ordersCollection = db.collection('payment');
-            const { insertedId } = await ordersCollection.updateOne({query}, {$set : {update}}, { session });
-            await commitWithRetry(session);
-            return insertedId;
+            const { modifiedCount } = await billLogCollection.updateOne({query}, {$set : {update}}, { session });
+            await session.commitTransaction()
+            return modifiedCount;
         } catch (err) {
-            console.log(err);
             await session.abortTransaction();
+            console.log(err);
             throw err;
         }finally {
             await session.endSession();
@@ -76,21 +84,21 @@ export default function makePaymentDb(makeDb) {
     }
 }
 
-async function commitWithRetry(session) {
-    while (true) {
-        try {
-            session.commitTransaction(); // Uses write concern set at transaction start.
-            print("Transaction committed.");
-            break;
-        } catch (error) {
-            // Can retry commit
-            if (error.hasOwnProperty("errorLabels") && error.errorLabels.includes("UnknownTransactionCommitResult") ) {
-                print("UnknownTransactionCommitResult, retrying commit operation ...");
-                continue;
-            } else {
-                print("Error during commit ...");
-                throw error;
-            }
-       }
-    }
-}
+// async function commitWithRetry(session) {
+//     while (true) {
+//         try {
+//             session.commitTransaction(); // Uses write concern set at transaction start.
+//             print("Transaction committed.");
+//             break;
+//         } catch (error) {
+//             // Can retry commit
+//             if (error.hasOwnProperty("errorLabels") && error.errorLabels.includes("UnknownTransactionCommitResult") ) {
+//                 print("UnknownTransactionCommitResult, retrying commit operation ...");
+//                 continue;
+//             } else {
+//                 print("Error during commit ...");
+//                 throw error;
+//             }
+//        }
+//     }
+// }

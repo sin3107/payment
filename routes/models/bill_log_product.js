@@ -1,13 +1,15 @@
 export default function buildBillLogProduct() {
     return ({
-        paymentId,
-        paymentProductTitle,
-        paymentProductPrice
+        billLogId,
+        productId,
+        billLogProductName,
+        billLogProductPrice
     }) => {
         return Object.freeze({
-            payment_id: Number(paymentId),
-            payment_product_title: String(paymentProductTitle),
-            payment_product_price: Number(paymentProductPrice)
+            bill_log_id: Number(billLogId),
+            product_id: Number(productId),
+            bill_log_product_name: String(billLogProductName),
+            bill_log_product_price: Number(billLogProductPrice)
         })
     }
 } 

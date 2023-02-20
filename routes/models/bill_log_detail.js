@@ -1,11 +1,11 @@
 export default function buildBillLogDetail(){
     return ({
-        paymentId,
-        paymentStep
+        billLogId,
+        billLogStep
     }) => {
         return Object.freeze({
-            payment_id: String(paymentId),
-            payment_step: Number(paymentStep)
+            bill_log_id: String(billLogId),
+            bill_log_step: Number(billLogStep)
         })
     }
 }

@@ -37,8 +37,8 @@ async function addPayment(httpRequest){
 
 async function successPayment(httpRequest){
     try {
-        const { params } = httpRequest;
-        const { status, body } = await payment_use_case.successPayment(params)
+        const { query } = httpRequest;
+        const { status, body } = await payment_use_case.successPayment(query)
         
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = body;
@@ -53,8 +53,8 @@ async function successPayment(httpRequest){
 
 async function failPayment(httpRequest){
     try {
-        const { params } = httpRequest;
-        const { status, body } = await payment_use_case.failPayment(params)
+        const { query } = httpRequest;
+        const { status, body } = await payment_use_case.failPayment(query)
         
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = body;

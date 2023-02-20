@@ -1,12 +1,9 @@
 import express from 'express';
 const router = express.Router()
-import v1 from './v1/index.js';
+import expressCallback from '../express-callback';
 
 router.get('/', (req, res) => {
-    res.send("routes success")
+    res.send("member success")
 })
-
-router.use('/v1', v1)
-
 
 export default router;

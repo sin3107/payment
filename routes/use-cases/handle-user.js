@@ -1,26 +1,26 @@
-import {userDb} from '../db-handler/index.js'
+import {memberDb} from '../db-handler/index.js'
 import errorMessage from "../helper/error.js";
 
-const user_use_cases = {
-    getUser,
+const member_use_cases = {
+    getMember,
 };
 
 export {
-    user_use_cases
+    member_use_cases
 };
 const result ={
     status: false,
     body: null
 }
 
-async function getUser(id){
+async function getMember(id){
     try {
         if(!id){
             result.status = false
             result.body = errorMessage.nullError.idMissing
             return result
         }
-        const dbResult = await userDb.findUserById(id)
+        const dbResult = await memberDb.findMemberById(id)
         if(dbResult){
             result.status = true
             result.body = out(dbResult)

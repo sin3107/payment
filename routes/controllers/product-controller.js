@@ -7,7 +7,9 @@ const httpResponse = {
 }
 
 export {
-    findProductList
+    findProductList,
+    findProduct,
+    findProductMaxCount
 }
 
 // ANCHOR status code list
@@ -20,8 +22,8 @@ const serverError = '500'
 
 async function findProductList(httpRequest) {
     try {
-        const { query : {storeId} } = httpRequest;
-        const { status, body } = await product_use_cases.findProductList(storeId)
+        const { params: {storeId} } = httpRequest;
+        const { status, body } = await product_use_cases.getProductList(storeId)
 
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = body;
@@ -35,10 +37,10 @@ async function findProductList(httpRequest) {
     }
 }
 
-async function findProductList(httpRequest) {
+async function findProduct(httpRequest) {
     try {
-        const { query : {productId} } = httpRequest;
-        const { status, body } = await product_use_cases.findProductById(productId)
+        const { params: { productId } } = httpRequest;
+        const { status, body } = await product_use_cases.getProduct(productId)
 
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = body;
@@ -52,10 +54,10 @@ async function findProductList(httpRequest) {
     }
 }
 
-async function addProduct(httpRequest) {
+async function findProductMaxCount(httpRequest) {
     try {
-        const { body:  } = httpRequest;
-        const { status, body } = await product_use_cases.addProduct()
+        const { body: { user: { _id } }, params: { productId } } = httpRequest;
+        const { status, body } = await product_use_cases.getProductMaxCount(_id, productId)
 
         httpResponse.statusCode = status ? ok : badRequest;
         httpResponse.body = body;
