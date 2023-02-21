@@ -104,8 +104,9 @@ function typeValid(model, key, value) {
             throw new Error(`type error: ${key} array size error, less than ${model.min} count`)
         }
 
-        // 배열 여기서 동일 타입 체크 가능
-
+        if(!model.child) {
+            throw new Error(`type error: ${key} array size error, less than ${model.min} count`)
+        }
     }
 
 
@@ -143,6 +144,8 @@ function typeValid(model, key, value) {
 
 function valid(body, models) {
     let data = {}
+    //            key       value
+    // models = { id: { type: "num" } }
     for( let i=0; i < Object.keys(models).length; i++ ) {
 
         let key = Object.keys(models)[i]

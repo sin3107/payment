@@ -1,4 +1,4 @@
-import { store_use_cases } from "../use-cases/handle-store";
+import { store_use_cases } from "../use-cases/handle-store.js"
 
 const httpResponse = {
     headers: '',

@@ -9,7 +9,8 @@ export default function buildTicket(){
             member_id: Number(memberId),
             product_id: Number(productId),
             bill_log_product_id: Number(billLogProductId),
-            qr_url_connection_code: String(qrUrlConnectionCode)
+            qr_url_connection_code: String(qrUrlConnectionCode),
+            ticket_yn: 0
         })
     }
 }

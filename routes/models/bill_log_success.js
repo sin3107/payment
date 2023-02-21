@@ -1,4 +1,4 @@
-export default function BillLogSuccess() {
+export default function buildBillLogSuccess() {
     return ({
         billLogId,
         paymentKey,

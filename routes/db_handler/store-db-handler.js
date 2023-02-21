@@ -18,7 +18,7 @@ export default function makeStoreDb(makeDb) {
                             from: "store_img",
                             localField: "store_id",
                             foreignField: "store_id",
-                            as: "storeImgList"
+                            as: "store_img_list"
                         }
                     },
                     {
@@ -26,12 +26,12 @@ export default function makeStoreDb(makeDb) {
                             from : "product",
                             localField : "store_id",
                             foreignField : "store_id",
-                            as : "productList"
+                            as : "product_list"
                         }
                     },
                     {
                         $sort: {
-                            "productList.product_order_number": 1
+                            "product_list.product_order_number": 1
                         }
                     }
                 ])

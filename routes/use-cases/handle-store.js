@@ -1,4 +1,4 @@
-import { StoreDb } from "../db_handler";
+import { storeDb } from "../db_handler/index.js";
 import errorMessage from "../helper/error.js"
 
 const store_use_cases = {
@@ -22,7 +22,7 @@ async function getStoreAndProduct(id) {
             return result
         }
 
-        const dbResult = await StoreDb.findStoreAndProduct(id)
+        const dbResult = await storeDb.findStoreAndProduct(id)
         if(dbResult) {
             result.status = true
             result.body = dbResult

@@ -1,4 +1,4 @@
-import { productDb } from '../db-handler/index.js'
+import { productDb } from "../db_handler/index.js"
 import errorMessage from "../helper/error.js";
 
 const product_use_cases = {

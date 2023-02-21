@@ -7,9 +7,9 @@ import {
 
 
 router.get('/', (req, res) => {
-    res.send("store")
+    res.send("product")
 })
 
-router.get('/:id', expressCallback(findProductMaxCount))
+router.get('/maxCount/:id', expressCallback(findProductMaxCount))
 
 export default router;
