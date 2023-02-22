@@ -70,22 +70,12 @@ async function addPayment(memberId, body){
         } 
 
         const { storeId, billLogType, billLogNumber, billLogTitle, billLogTotalPrice } = body;
-
         const billLog = BillLog({ memberId, storeId, billLogType, billLogNumber, billLogTitle, billLogTotalPrice });
-        const billId = await paymentDb.insertBillLog(billLog)
-        
-        await paymentDb.insertBillLogDetail(BillLogDetail({billId, step: 1}))
 
-        await Promise.all(
-            productDetailList.map(async (product) => {
-                const { product_id, product_name, product_price } = product;
-                const billLogProduct = BillLogProduct({ billId, product_id, product_name, product_price })
-                await paymentDb.insertBillLogProduct(billLogProduct);
-            })
-        )
-        
+        const billId = await paymentDb.insertBillLog(billLog, productDetailList);
+
         result.status = true;
-        result.body = { _id: billId, memeberName: hasUser.member_name }
+        result.body = { _id: billId }
         return result;
     } catch (err) {
         console.log(err)
@@ -109,43 +99,54 @@ async function insertBillLogDetail(body) {
 }
 
 
-async function successPayment(query){
+async function successPayment(body){
     try {
-        const { paymentKey, orderId: billId, amount } = query;
+        const { paymentKey, orderId: billId, amount } = body;
 
         const options = {
-            uri:"https://api.tosspayments.com/v1/payments/confirm", 
-            method: 'POST',
+            uri: "https://api.tosspayments.com/v1/payments/confirm", 
+            method: "POST",
             body: {
                 paymentKey, orderId, amount
             },
-            json:true
+            json: true
         }
 
         // new Promise((resolve, reject) => {})
-
-        request.post(options, function(err, httpResponse, body){ 
-            if(err) {
-                console.log(`err => ${err}`)
-            } else {
-                if(httpResponse.statusCode == 200) {
-                    const billLogSuccess = BillLogSuccess({billLogId: billId, paymentKey, billLogDate: body.approvedAt}),
-                    billLogDetail = BillLogDetail({billLogId: billId, step: 6});
-                    paymentDb.successBillLog(billId, billLogSuccess, billLogDetail)
-
-                    result.status = true;
-                    result.body = { success: true }
-                    
-                } else {
-                    // bill_log_detail step=4 insert
-                    const billLogDetail = BillLogDetail({billId, step: 4})
-                    paymentDb.insertBillLogDetail(billLogDetail);
-
-                    result.status = false;
-                    result.body = { success: false }
-                }
-            }
+        const billData = {billLogId: billId, paymentKey, billLogDate: body.approvedAt}
+        await retry(0, requestData, options, billData)
+        .then((result) => {
+            console.log('data', result);
         })
+        .catch((err) => {
+            console.log("error", err)
+        })
+        .finally(()=> {
+            console.log('end');
+        }); 
+
+        // request.post(options, function(err, httpResponse, body){ 
+        //     if(err) {
+        //         console.log(`err => ${err}`)
+        //     } else {
+        //         if(httpResponse.statusCode == 200) {
+        //             const billLogSuccess = BillLogSuccess({billLogId: billId, paymentKey, billLogDate: body.approvedAt}),
+        //             billLogDetail = BillLogDetail({billLogId: billId, step: 6});
+        //             paymentDb.successBillLog(billId, billLogSuccess, billLogDetail)
+
+        //             result.status = true;
+        //             result.body = { success: true }
+                    
+        //         } else {
+        //             // bill_log_detail step=4 insert
+        //             const billLogDetail = BillLogDetail({billId, step: 4})
+        //             paymentDb.insertBillLogDetail(billLogDetail);
+
+        //             result.status = false;
+        //             result.body = { success: false }
+        //         }
+        //     }
+        // })
 
         return result;
         
@@ -156,9 +157,9 @@ async function successPayment(query){
 }
 
 
-async function failPayment(query){
+async function failPayment(body){
     try {
-        const {code, message, orderId} = query
+        const {code, message, orderId} = body
 
         const billLogError = BillLogError({orderId, code, message});
         await paymentDb.insertBillLogError(billLogError);
@@ -207,63 +208,17 @@ async function insertTestData() {
 }
 
 
-// function requestData() {
-//     return new Promise ((resolve, reject) => {
-
-//         const dbResult = paymentDb.insertTestData();
-//         if (dbResult) {
-//             resolve(dbResult);
-//         }
-//         reject(dbResult)
-//     });
-// }
-// function retry(n, requestData) {
-//     return new Promise ((resolve, reject) => {
-
-//         console.log('retry', n) 
-//         requestData()
-//         .then((data) => {
-//             resolve(data) 
-//         })
-//         .catch((error) => {
-//             if(n < 5){
-//                 retry(n+1, requestData)
-//                 .then(resolve)
-//                 .catch(reject)
-//             } else {
-//                 reject(new Error('fail retry'))
-//             }
-//         });
-//     });
-// }
-
-
 function requestData() {
     return new Promise ((resolve, reject) => {
 
-        request.post(options, function(err, httpResponse, body){ 
-            if(err) {
-                console.log(`err => ${err}`)
-                reject(err)
-            } else {
-                if(httpResponse.statusCode == 200) {
-                    const billLogSuccess = BillLogSuccess({billLogId: billId, paymentKey, billLogDate: body.approvedAt}),
-                    billLogDetail = BillLogDetail({billLogId: billId, step: 6});
-                    paymentDb.successBillLog(billId, billLogSuccess, billLogDetail)
-
-                    resolve()
-                } else {
-                    // bill_log_detail step=4 insert
-                    const billLogDetail = BillLogDetail({billId, step: 4})
-                    paymentDb.insertBillLogDetail(billLogDetail);
-
-                    reject()
-                }
-            }
-        })
+        const dbResult = paymentDb.insertTestData();
+        setTimeout(() => {}, 1000)
+        if (dbResult) {
+            resolve(dbResult);
+        }
+        reject(dbResult)
     });
 }
-
 
 function retry(n, requestData) {
     return new Promise ((resolve, reject) => {
@@ -284,3 +239,51 @@ function retry(n, requestData) {
         });
     });
 }
+
+
+// function requestData(options, billData) {
+//     return new Promise ((resolve, reject) => {
+//         const {billLogId, paymentKey, billLogDate} = billData
+//         request.post(options, function(err, httpResponse, body){ 
+            
+//             if(err) {
+//                 console.log(`err => ${err}`)
+//                 reject(err)
+//             } else {
+//                 if(httpResponse.statusCode == 200) {
+//                     const billLogSuccess = BillLogSuccess({billLogId, paymentKey, billLogDate}),
+//                     billLogDetail = BillLogDetail({billLogId, step: 6});
+//                     paymentDb.successBillLog(billLogId, billLogSuccess, billLogDetail)
+
+//                     resolve()
+//                 } else {
+//                     // bill_log_detail step=4 insert
+//                     const billLogDetail = BillLogDetail({billLogId, step: 4})
+//                     paymentDb.insertBillLogDetail(billLogDetail);
+
+//                     reject()
+//                 }
+//             }
+//         })
+//     });
+// }
+
+
+// function retry(n, requestData, options, billData) {
+//     return new Promise ((resolve, reject) => {
+//         console.log('retry', n) 
+//         requestData(options, billData)
+//         .then((data) => {
+//             resolve(data) 
+//         })
+//         .catch((error) => {
+//             if(n < 5){
+//                 retry(n+1, requestData, options, billData)
+//                 .then(resolve)
+//                 .catch(reject)
+//             } else {
+//                 reject(new Error('fail retry'))
+//             }
+//         });
+//     });
+// }

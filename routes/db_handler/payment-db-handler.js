@@ -1,4 +1,4 @@
-import { Ticket } from "../models/index.js"
+import { Ticket, BillLogProduct, BillLogDetail } from "../models/index.js"
 
 export default function makePaymentDb(makeDb, client, dbName) {
     return Object.freeze({
@@ -21,14 +21,39 @@ export default function makePaymentDb(makeDb, client, dbName) {
         }
     }
 
-    async function insertBillLog(BillLog) {
+    async function insertBillLog(billLog, productDetailList) {
+        const db = client.db(dbName)
+        const billLogCollection = db.collection('bill_log');
+        const billLogDetailCollection = db.collection('bill_log_detail');
+        const billLogProductCollection = db.collection('bill_log_product');
+
+        // transaction start
+        const session = await client.startSession();
+        await session.startTransaction();
+        
         try {
-            const db = await getPaymentDb();
-            const { insertedId } = await db.insertOne(BillLog);
+            const { insertedId } = await billLogCollection.insertOne(billLog, { session });
+            
+            await billLogDetailCollection.insertOne(BillLogDetail({ billLogId: insertedId, step: 1 }), { session });
+
+            await Promise.all(
+                productDetailList.map(async (product) => {
+                    const { product_id, product_name, product_price } = product;
+                    const billLogProduct = BillLogProduct({ 
+                        billLogId: insertedId, productId: product_id, 
+                        billLogProductName: product_name, billLogProductPrice: product_price })
+                    await billLogProductCollection.insertOne(billLogProduct, { session });
+                })
+            )
+
+            await session.commitTransaction()
             return insertedId;
         } catch (err) {
+            await session.abortTransaction();
             console.log(err);
             throw err;
+        }finally {
+            await session.endSession();
         }
     }
 
@@ -76,7 +101,7 @@ export default function makePaymentDb(makeDb, client, dbName) {
 
         // transaction start
         const session = await client.startSession();
-        session.startTransaction();
+        await session.startTransaction();
         try {
 
             // bill_log_success table

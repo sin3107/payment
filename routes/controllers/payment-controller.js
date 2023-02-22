@@ -40,7 +40,7 @@ async function addPayment(httpRequest){
 async function addBillLogDetail(httpRequest){
     try {
         const { body } = httpRequest;
-        const { status, resBody } = await payment_use_case.succeinsertBillLogDetailssPayment(body)
+        const { status, resBody } = await payment_use_case.insertBillLogDetail(body)
         
         httpResponse.statusCode = status ? created : badRequest;
         httpResponse.body = resBody;

@@ -5,6 +5,6 @@ import {
     getMyTicket
 } from '../controllers/ticket-controller.js'
 
-router.get('/:id/:yn', expressCallback(getMyTicket)) 
+router.get('/:yn', expressCallback(getMyTicket)) 
 
 export default router;

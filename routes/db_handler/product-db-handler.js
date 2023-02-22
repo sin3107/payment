@@ -33,6 +33,7 @@ export default function makeProductDb(makeDb) {
 
     async function findProductByIdAndMaxCount(id, productNumber) {
         try {
+            // 갯수제한 없음은
             const db = await makeDb().collection('product');
             const query = { product_id: id, product_max_count: { $lte: productNumber } };
             const result = await db.findOne(query);
