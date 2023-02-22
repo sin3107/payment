@@ -135,6 +135,11 @@ export default function makePaymentDb(makeDb, client, dbName) {
 
             const productDb = await client.db(dbName).collection('bill_log_product')
             
+            const testCollection = await client.db(dbName).collection('test') 
+
+            const dbResult = await testCollection.insertOne({_id: 25, name: '25'})
+            return dbResult ? dbResult : null
+
             // await productDb.insertOne({_id: 4, bill_log_id: 2, product_id: 1, bill_log_product_name: "콜라", bill_log_product_price: "1000"});
             // await productDb.insertOne({_id: 5, bill_log_id: 2, product_id: 1, bill_log_product_name: "콜라", bill_log_product_price: "1000"});
             // await productDb.insertOne({_id: 6, bill_log_id: 2, product_id: 2, bill_log_product_name: "라면", bill_log_product_price: "2500"});
@@ -142,27 +147,27 @@ export default function makePaymentDb(makeDb, client, dbName) {
             
             // return insertedId
 
-            const result = await db.aggregate(
-                [
-                    {
-                        $match: {
-                            "bill_log_id": 1,
-                        }
-                    },
-                    {
-                        $lookup: {
-                            from: "bill_log_product",
-                            localField: "bill_log_id",
-                            foreignField: "bill_log_id",
-                            as: "bill_log_product_list"
-                        }
-                    }
-                ])
-            let arr = []
-            await result.forEach(item => arr.push(item))
-            return arr
+            // const result = await db.aggregate(
+            //     [
+            //         {
+            //             $match: {
+            //                 "bill_log_id": 1,
+            //             }
+            //         },
+            //         {
+            //             $lookup: {
+            //                 from: "bill_log_product",
+            //                 localField: "bill_log_id",
+            //                 foreignField: "bill_log_id",
+            //                 as: "bill_log_product_list"
+            //             }
+            //         }
+            //     ])
+            // let arr = []
+            // await result.forEach(item => arr.push(item))
+            // return arr
         } catch (err) {
-            console.log(err);
+            console.log("dbError: ", err);
             throw err;
         }
     }

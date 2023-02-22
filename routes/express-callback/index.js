@@ -20,8 +20,8 @@ export default function expressCallback(controller) {
         res.type("json");
         res.status(parseInt(httpResponse.statusCode)).send(httpResponse.body);
       } catch (err) {
-        console.log("path :", req.originalUrl);
-        console.log(err);
+        console.log("path: ", req.originalUrl);
+        console.log("call back error: ", err);
         res.status(500).send({ error: "An unknown error occured." });
       }
     };

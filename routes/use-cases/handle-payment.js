@@ -175,14 +175,112 @@ async function failPayment(query){
 async function insertTestData() {
     try {
 
-        const dbResult = await paymentDb.insertTestData();
+        // const dbResult = await paymentDb.insertTestData();
+        // result.status = true;
+        // result.body = dbResult;
+        let dbResult = {}
+
+
+        await retry(0, requestData)
+        .then((result) => {
+            console.log('data', result);
+            dbResult = result
+        })
+        .catch((err) => {
+            console.log("error", err)
+        })
+        .finally(()=> {
+            console.log('end');
+        }); 
+
+
         result.status = true;
-        result.body = dbResult;
-        
+        result.body = { insertedId: dbResult.insertedId };
+
+
         return result
 
     } catch(err) {
         console.log(err)
         throw err;
     }
+}
+
+
+// function requestData() {
+//     return new Promise ((resolve, reject) => {
+
+//         const dbResult = paymentDb.insertTestData();
+//         if (dbResult) {
+//             resolve(dbResult);
+//         }
+//         reject(dbResult)
+//     });
+// }
+// function retry(n, requestData) {
+//     return new Promise ((resolve, reject) => {
+
+//         console.log('retry', n) 
+//         requestData()
+//         .then((data) => {
+//             resolve(data) 
+//         })
+//         .catch((error) => {
+//             if(n < 5){
+//                 retry(n+1, requestData)
+//                 .then(resolve)
+//                 .catch(reject)
+//             } else {
+//                 reject(new Error('fail retry'))
+//             }
+//         });
+//     });
+// }
+
+
+function requestData() {
+    return new Promise ((resolve, reject) => {
+
+        request.post(options, function(err, httpResponse, body){ 
+            if(err) {
+                console.log(`err => ${err}`)
+                reject(err)
+            } else {
+                if(httpResponse.statusCode == 200) {
+                    const billLogSuccess = BillLogSuccess({billLogId: billId, paymentKey, billLogDate: body.approvedAt}),
+                    billLogDetail = BillLogDetail({billLogId: billId, step: 6});
+                    paymentDb.successBillLog(billId, billLogSuccess, billLogDetail)
+
+                    resolve()
+                } else {
+                    // bill_log_detail step=4 insert
+                    const billLogDetail = BillLogDetail({billId, step: 4})
+                    paymentDb.insertBillLogDetail(billLogDetail);
+
+                    reject()
+                }
+            }
+        })
+    });
+}
+
+
+function retry(n, requestData) {
+    return new Promise ((resolve, reject) => {
+
+        console.log('retry', n) 
+        requestData()
+        .then((data) => {
+            resolve(data) 
+        })
+        .catch((error) => {
+            if(n < 5){
+                retry(n+1, requestData)
+                .then(resolve)
+                .catch(reject)
+            } else {
+                reject(new Error('fail retry'))
+            }
+        });
+    });
 }
